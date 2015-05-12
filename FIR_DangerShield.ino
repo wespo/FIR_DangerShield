@@ -31,7 +31,7 @@ void setup() {
 
 void loop() {
     
-  //If no filter selected, displays options
+  //If no filter selected and options havent been displayed, displays options
   //The filter selection can be changed at any point during runtime
     if (filter == -2) {
       Serial.println("Select a Filter");
@@ -40,13 +40,14 @@ void loop() {
       Serial.println("2: Band Pass Filter");
       Serial.println("3: Band Stop Filter");
       Serial.println("then click [send] or press [return]");
+      Serial.println("IMPORTANT: check that line ending is set to \"No line ending\"");
       Serial.println();
       
-      filter = -1;
+      filter = -1; //still no filter selected
     }
     
     //Filter selection via Serial Port
-    while (Serial.available() > 0) {
+    if (Serial.available() > 0) {
        filter = Serial.parseInt();
        filter = constrain(filter, 0, 3);
        Serial.print("You have selected filter #");
@@ -65,7 +66,6 @@ void loop() {
            Serial.println(": band stop");
            break;  
        }
-       
     }
     
     //Takes appropriate action according to current filter
@@ -178,7 +178,7 @@ void band_stop() {
  * provides low pass filter functionality
  */
 void low_pass() {
-    int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000);
+    int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000); //The cutoff, named for reuse purposes
     int volume = constrain(map(analogRead(A2),20,1000,0,100),0,100);
     
     if (volume != volume_old || (center < 100 && center != center_old) || (center > 100 && abs(center_old - center) > 30)) {
@@ -202,7 +202,7 @@ void low_pass() {
  * provides high pass filter functionality
  */
 void high_pass() {
-    int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000);
+    int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000); //The cutoff
     int volume = constrain(map(analogRead(A2),20,1000,0,100),0,100);
     
     if (volume != volume_old || (center < 100 && center != center_old) || (center > 100 && abs(center_old - center) > 30)) {
