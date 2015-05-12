@@ -21,27 +21,31 @@ void setup() {
     DSPShield.startLoopback(); //start shield audio loopback
   
     Serial.begin(9600);
-    pinMode(A0, INPUT); //filter center frequency
+    pinMode(A0, INPUT); //filter center frequency or cutoff
     pinMode(A1, INPUT); //filter width
     pinMode(A2, INPUT); //system volume
     filter = -2;
     DSPShield.setOutputVolume(40);
 }
 
+
 void loop() {
-  
+    
+  //If no filter selected, displays options
+  //The filter selection can be changed at any point during runtime
     if (filter == -2) {
-        Serial.println("Select a Filter");
-        Serial.println("0: Low Pass Filter");
-        Serial.println("1: High Pass Filter");
-        Serial.println("2: Band Pass Filter");
-        Serial.println("3: Band Stop Filter");
-        Serial.println("then click [send] or press [return]");
-        Serial.println();
-        
-        filter = -1;
+      Serial.println("Select a Filter");
+      Serial.println("0: Low Pass Filter");
+      Serial.println("1: High Pass Filter");
+      Serial.println("2: Band Pass Filter");
+      Serial.println("3: Band Stop Filter");
+      Serial.println("then click [send] or press [return]");
+      Serial.println();
+      
+      filter = -1;
     }
     
+    //Filter selection via Serial Port
     while (Serial.available() > 0) {
        filter = Serial.parseInt();
        filter = constrain(filter, 0, 3);
@@ -64,6 +68,7 @@ void loop() {
        
     }
     
+    //Takes appropriate action according to current filter
     switch (filter) {
       case 0:
         low_pass();
@@ -83,11 +88,20 @@ void loop() {
 
 
 
+//--------------------------------------------------------------------------------
+//The following four methods provide the same functionality for different filters
+//--------------------------------------------------------------------------------
+
+
+/*function band_pass
+ * provides band pass filter functionality
+ */
 void band_pass() {
     int width = constrain(map(analogRead(A1),20,1000,100,10000),100,10000);
     int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000);
     int volume = constrain(map(analogRead(A2),20,1000,0,100),0,100);
     
+    //Prints filter settings if non-trivial changes have been made
     if (abs(width - width_old) > 20 || volume != volume_old || (center < 100 && center != center_old) || (center > 100 && abs(center_old - center) > 30)) {
         Serial.print("Band pass filter:\t");
         Serial.print("Center Frequency: ");
@@ -119,20 +133,22 @@ void band_pass() {
     cutoff options:
     For filters with two cutoffs, use two parameters. For single paramter filters (LOW_PASS and HIGH_PASS) use one cutoff parameter
     Increments are 1Hz steps from 10Hz to 20000Hz
-    
     */
+    
+    DSPShield.setFIRFilter(CHAN_BOTH, BAND_PASS, 201, constrain(center-width, 10, 20000), constrain(center+width,20,20000));
+    //try 511 taps for a sharper notch but slower load times! 
+    DSPShield.setOutputVolume(volume);
     
     
     center_old = center;
     volume_old = volume;
     width_old = width;
-    
-    DSPShield.setFIRFilter(CHAN_BOTH, BAND_PASS, 201, constrain(center-width, 10, 20000), constrain(center+width,20,20000));
-    //try 511 taps for a sharper notch but slower load times! 
-    DSPShield.setOutputVolume(volume);
 }
 
 
+/*function band_stop
+ * provides band stop filter functionality
+ */
 void band_stop() {
     int width = constrain(map(analogRead(A1),20,1000,100,10000),100,10000);
     int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000);
@@ -148,15 +164,19 @@ void band_stop() {
         Serial.print(volume);
         Serial.println();    
     }
-    center_old = center;
-    volume_old = volume;
-    width_old = width;
     
     DSPShield.setFIRFilter(CHAN_BOTH, BAND_STOP, 201, constrain(center-width, 10, 20000), constrain(center+width,20,20000));  
     DSPShield.setOutputVolume(volume);
+    
+    center_old = center;
+    volume_old = volume;
+    width_old = width;
 }
 
 
+/*function low_pass
+ * provides low pass filter functionality
+ */
 void low_pass() {
     int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000);
     int volume = constrain(map(analogRead(A2),20,1000,0,100),0,100);
@@ -169,14 +189,18 @@ void low_pass() {
         Serial.print(volume);
         Serial.println();
     }
-    center_old = center;
-    volume_old = volume;
 
     DSPShield.setFIRFilter(CHAN_BOTH, LOW_PASS, 201, center);
     DSPShield.setOutputVolume(volume);
+    
+    center_old = center;
+    volume_old = volume;
 }
 
 
+/*function high_pass
+ * provides high pass filter functionality
+ */
 void high_pass() {
     int center = constrain(map(analogRead(A0),20,1000,10,16000),10,16000);
     int volume = constrain(map(analogRead(A2),20,1000,0,100),0,100);
@@ -190,9 +214,9 @@ void high_pass() {
         Serial.println();   
     }
     
-    center_old = center;
-    volume_old = volume;
-    
     DSPShield.setFIRFilter(CHAN_BOTH, HIGH_PASS, 201, center);
     DSPShield.setOutputVolume(volume);
+    
+    center_old = center;
+    volume_old = volume;
 }
