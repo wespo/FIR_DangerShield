@@ -13,6 +13,7 @@ void setup() {
   DSPShield.init(); //initialize
   
   DSPShield.startLoopback(); //start shield audio loopback
+  DSPShield.displayPrint("Danger Shield Demo");
 
   Serial.begin(9600);
   pinMode(A0, INPUT); //filter center frequency
@@ -31,7 +32,6 @@ void loop() {
     Serial.print("\tVolume: ");
     Serial.print(volume);
     Serial.println();
-
   
     /*load a band stop filter from the SD Card. 
     
